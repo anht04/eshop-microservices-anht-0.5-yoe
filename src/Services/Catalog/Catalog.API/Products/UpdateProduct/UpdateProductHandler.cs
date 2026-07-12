@@ -1,4 +1,7 @@
-﻿namespace Catalog.API.Products.UpdateProduct;
+﻿using Catalog.API.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace Catalog.API.Products.UpdateProduct;
 
 public record UpdateProductCommand(
     Guid Id,
@@ -28,12 +31,12 @@ public class UpdateProductValidator : AbstractValidator<UpdateProductCommand>
     }
 }
 
-public class UpdateProductHandler(IDocumentSession session)
+public class UpdateProductHandler(CatalogDbContext dbContext)
     : ICommandHandler<UpdateProductCommand, UpdateProductResult>
 {
     public async Task<UpdateProductResult> Handle(UpdateProductCommand command, CancellationToken cancellationToken)
     {
-        var product = await session.LoadAsync<Product>(command.Id, cancellationToken)
+        var product = await dbContext.Products.FirstOrDefaultAsync(p => p.Id == command.Id, cancellationToken)
                       ?? throw new ProductNotFoundException(command.Id);
 
         product.Name = command.Name;
@@ -42,8 +45,8 @@ public class UpdateProductHandler(IDocumentSession session)
         product.ImageFile = command.ImageFile;
         product.Price = command.Price;
 
-        session.Update(product);
-        await session.SaveChangesAsync(cancellationToken);
+        dbContext.Update(product);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         return new UpdateProductResult(true);
     }

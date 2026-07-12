@@ -13,6 +13,9 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
                 dbId => OrderItemId.Of(dbId)
             );
 
+        builder.Property(oi => oi.Price)
+            .HasPrecision(18, 2);
+        
         builder.HasOne<Product>()
             .WithMany()
             .HasForeignKey(oi => oi.ProductId);

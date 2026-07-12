@@ -12,7 +12,11 @@ services:
       - ASPNETCORE_HTTPS_PORTS=8081
       - ASPNETCORE_Kestrel__Certificates__Default__Password=12345
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
-      - ConnectionStrings__Database=Server=catalogdb;Port=5432;Database=CatalogDb;User Id=postgres;Password=12345;TrustServerCertificate=True;Include Error Detail=true
+      - DatabaseSettings__ConnectionString=mongodb://catalogdb:27017
+      - DatabaseSettings__DatabaseName=CatalogDb
+      - DatabaseSettings__ProductCollectionName=Products
+      - DatabaseSettings__BrandCollectionName=Brands
+      - DatabaseSettings__TypeCollectionName=Types
     depends_on:
       - catalogdb
     ports:
@@ -24,19 +28,14 @@ services:
     volumes:
       - ~/.aspnet/https:/https:ro
 
-  # Catalog Database Service
   catalogdb:
-    image: postgres
+    image: mongo:latest
     container_name: catalogdb
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=12345
-      - POSTGRES_DB=CatalogDb
     restart: always
     ports:
-      - "5433:5432"
+      - "27017:27017"
     volumes:
-      - postgres_catalog:/var/lib/postgresql/data/
+      - mongo_catalog:/data/db
 
   # Basket API Service
   basket.api:
@@ -86,7 +85,7 @@ services:
 
   # Distributed Cache Service
   distributedcache:
-    container_name: distributedcache-msa
+    container_name: distributedcache-msa-eshop
     image: redis
     restart: always
     ports:
@@ -208,5 +207,5 @@ services:
       - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
 
 volumes:
-  postgres_catalog:
+  mongo_catalog:
   postgres_basket:

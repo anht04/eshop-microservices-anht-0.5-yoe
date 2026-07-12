@@ -13,6 +13,9 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasConversion(orderId => orderId.Value,
                 dbId => OrderId.Of(dbId));
 
+        builder.Property(o => o.TotalPrice)
+            .HasPrecision(18, 2);
+        
         builder.HasOne<Customer>()
             .WithMany()
             .HasForeignKey(o => o.CustomerId)
@@ -104,6 +107,7 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.Property(o => o.Status)
             .HasDefaultValue(OrderStatus.Draft)
+            .HasSentinel(OrderStatus.Draft)
             .HasConversion(s => s.ToString(),
                 dbStatus => (OrderStatus) Enum.Parse(typeof(OrderStatus), dbStatus));
     }

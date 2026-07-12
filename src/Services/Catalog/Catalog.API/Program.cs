@@ -1,38 +1,44 @@
 using BuildingBlocks.Exceptions.Handler;
+using Catalog.API.Data;
+using Catalog.API.Settings;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+var services = builder.Services;
 
 // Add services to the container.
-builder.Services.AddCarter();
-builder.Services.AddMediatR(config =>
+services.AddCarter();
+services.AddMediatR(config =>
 {
     config.RegisterServicesFromAssembly(typeof(Program).Assembly);
     config.AddOpenBehavior(typeof(ValidationBehavior<,>));
     config.AddOpenBehavior(typeof(LoggingBehavior<,>));
 });
 
-builder.Services.AddMarten(opts => { opts.Connection(builder.Configuration.GetConnectionString("Database")!); })
-    .UseLightweightSessions(); //Use lightweight sessions by default for the injected IDocumentSession objects. Equivalent to IDocumentStore. LightweightSession();
+services.Configure<DatabaseSettings>(builder.Configuration.GetSection(nameof(DatabaseSettings)));
+builder.Services.AddDbContext<CatalogDbContext>((sp, options) =>
+    {
+        var settings = sp.GetRequiredService<IOptions<DatabaseSettings>>().Value;
+        options.UseMongoDB(
+            settings.ConnectionString,
+            settings.DatabaseName
+        );
+    }
+);
+services.AddExceptionHandler<CustomExceptionHandler>();
 
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.InitializeMartenWith<CatalogInitialData>();
-}
+services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 
-builder.Services.AddExceptionHandler<CustomExceptionHandler>();
+services
+    .AddHealthChecks();
 
-builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
-
-builder.Services
-    .AddHealthChecks()
-    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!);
-
-builder.Services.AddControllers();
+services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+services.AddEndpointsApiExplorer();
+services.AddSwaggerGen();
 
 var app = builder.Build();
 
