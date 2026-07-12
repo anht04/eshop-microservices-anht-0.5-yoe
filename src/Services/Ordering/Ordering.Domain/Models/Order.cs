@@ -1,8 +1,9 @@
+using BuildingBlocks.DDD;
 using Ordering.Domain.Events;
 
 namespace Ordering.Domain.Models;
 
-public class Order : Aggregate<OrderId>
+public class Order : AggregateRoot<OrderId>
 {
     // ReSharper disable once CollectionNeverUpdated.Local
     private readonly List<OrderItem> _orderItems = [];

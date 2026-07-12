@@ -1,6 +1,8 @@
-namespace Ordering.Domain.Abstractions;
+﻿using BuildingBlocks.DDD.Abstractions;
 
-public abstract class Aggregate<TId> : Entity<TId>, IAggregate<TId>
+namespace BuildingBlocks.DDD;
+
+public abstract class AggregateRoot<TId> : AuditableEntity<TId>, IAggregateRoot<TId>
 {
     private readonly List<IDomainEvent> _domainEvents = [];
 
@@ -11,13 +13,10 @@ public abstract class Aggregate<TId> : Entity<TId>, IAggregate<TId>
         _domainEvents.Add(domainEvent);
     }
 
-    //Return dequeued events and clear all Domain Events
     public IDomainEvent[] ClearDomainEvents()
     {
         IDomainEvent[] dequeuedEvents = _domainEvents.ToArray();
-
         _domainEvents.Clear();
-        
         return dequeuedEvents;
     }
 }

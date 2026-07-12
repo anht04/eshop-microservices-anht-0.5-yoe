@@ -1,3 +1,4 @@
+using BuildingBlocks.DDD.Abstractions;
 using MediatR;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
@@ -18,20 +19,24 @@ public class DispatchDomainEventsInterceptor(IMediator mediator) : SaveChangesIn
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    public async Task DispatchDomainEvents(DbContext? context)
+    private async Task DispatchDomainEvents(DbContext? context)
     {
-        if (context is null) return;
+        if (context is null)
+        {
+            return;
+        }
 
         var aggregates = context.ChangeTracker
-            .Entries<IAggregate>()
+            .Entries<IAggregateRoot>()
             .Where(entityEntry => entityEntry.Entity.DomainEvents.Any())
-            .Select(entityEntry => entityEntry.Entity);
+            .Select(entityEntry => entityEntry.Entity)
+            .ToList();
 
         var domainEvents = aggregates
             .SelectMany(a => a.DomainEvents)
             .ToList();
 
-        aggregates.ToList().ForEach(a => a.ClearDomainEvents());
+        aggregates.ForEach(a => a.ClearDomainEvents());
 
         foreach (var domainEvent in domainEvents)
         {

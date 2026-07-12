@@ -1,3 +1,5 @@
+using BuildingBlocks.DDD;
+
 namespace Ordering.Domain.Models;
 
 public class Customer : Entity<CustomerId>
