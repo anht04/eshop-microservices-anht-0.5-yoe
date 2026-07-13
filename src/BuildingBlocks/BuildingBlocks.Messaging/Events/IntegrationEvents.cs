@@ -6,5 +6,5 @@ public record IntegrationEvents
 
     public DateTime OccurredOn => DateTime.Now;
 
-    public string EventType => GetType().AssemblyQualifiedName;
+    public string? EventType => GetType().AssemblyQualifiedName;
 }
