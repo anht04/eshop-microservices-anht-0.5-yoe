@@ -81,7 +81,7 @@ services:
     ports:
       - "5434:5432"
     volumes:
-      - postgres_basket:/var/lib/postgresql/data/
+      - postgres_basket:/var/lib/postgresql
 
   # Distributed Cache Service
   distributedcache:

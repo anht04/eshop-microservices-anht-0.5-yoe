@@ -4,6 +4,15 @@ namespace Catalog.API.Data;
 
 public static class CatalogDbContextSeed
 {
+    public static async Task InitializeDatabaseAsync(this WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+
+        var context = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+
+        await SeedAsync(context);
+    }
+
     public static async Task SeedAsync(CatalogDbContext dbContext, CancellationToken cancellationToken = default)
     {
         if (!await dbContext.ProductBrands.AnyAsync(cancellationToken))

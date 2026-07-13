@@ -28,12 +28,12 @@ builder.Services.AddDbContext<CatalogDbContext>((sp, options) =>
         );
     }
 );
+
 services.AddExceptionHandler<CustomExceptionHandler>();
 
 services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 
-services
-    .AddHealthChecks();
+services.AddHealthChecks();
 
 services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -47,6 +47,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    await app.InitializeDatabaseAsync();
 }
 
 app.MapCarter();

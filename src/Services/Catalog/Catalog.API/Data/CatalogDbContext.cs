@@ -15,6 +15,7 @@ public class CatalogDbContext : DbContext
     public CatalogDbContext(DbContextOptions<CatalogDbContext> options, IOptions<DatabaseSettings> dbOptions) : base(options)
     {
         _dbOptions = dbOptions;
+        Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
