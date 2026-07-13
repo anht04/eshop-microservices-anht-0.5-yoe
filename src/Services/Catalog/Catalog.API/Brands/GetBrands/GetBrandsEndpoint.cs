@@ -1,5 +1,4 @@
 ﻿using BuildingBlocks.Pagination;
-using Catalog.API.Products.GetProducts;
 
 namespace Catalog.API.Brands.GetBrands;
 
