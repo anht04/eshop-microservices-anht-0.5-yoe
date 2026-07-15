@@ -9,7 +9,7 @@ public record CreateProductCommand(
     string ImageFile,
     decimal Price) : ICommand<CreateProductResult>;
 
-public record CreateProductResult(Guid Id);
+public record CreateProductResult(string Id);
 
 public class CreateProductValidator : AbstractValidator<CreateProductCommand>
 {
@@ -36,8 +36,7 @@ public class CreateProductHandler(CatalogDbContext dbContext) : ICommandHandler<
             Price = command.Price
         };
 
-        await dbContext.Products.AddAsync(product, cancellationToken);        
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await dbContext.Products.InsertOneAsync(product, cancellationToken: cancellationToken);        
 
         return new CreateProductResult(product.Id);
     }

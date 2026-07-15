@@ -1,10 +1,10 @@
 ﻿using Catalog.API.Data;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 
 namespace Catalog.API.Products.UpdateProduct;
 
 public record UpdateProductCommand(
-    Guid Id,
+    string Id,
     string Name,
     List<string> Category,
     string Description,
@@ -36,7 +36,9 @@ public class UpdateProductHandler(CatalogDbContext dbContext)
 {
     public async Task<UpdateProductResult> Handle(UpdateProductCommand command, CancellationToken cancellationToken)
     {
-        var product = await dbContext.Products.FirstOrDefaultAsync(p => p.Id == command.Id, cancellationToken)
+        var product = await dbContext.Products 
+            .Find(p => p.Id == command.Id) 
+            .FirstOrDefaultAsync(cancellationToken) 
                       ?? throw new ProductNotFoundException(command.Id);
 
         product.Name = command.Name;
@@ -45,8 +47,7 @@ public class UpdateProductHandler(CatalogDbContext dbContext)
         product.ImageFile = command.ImageFile;
         product.Price = command.Price;
 
-        dbContext.Update(product);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await dbContext.Products.ReplaceOneAsync(p => p.Id == command.Id, product, cancellationToken: cancellationToken);
 
         return new UpdateProductResult(true);
     }

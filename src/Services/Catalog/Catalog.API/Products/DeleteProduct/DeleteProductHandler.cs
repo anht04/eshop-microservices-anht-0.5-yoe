@@ -1,9 +1,9 @@
 ﻿using Catalog.API.Data;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 
 namespace Catalog.API.Products.DeleteProduct;
 
-public record DeleteProductCommand(Guid Id) : ICommand<DeleteProductResult>;
+public record DeleteProductCommand(string Id) : ICommand<DeleteProductResult>;
 
 public record DeleteProductResult(bool IsSuccess);
 
@@ -20,11 +20,12 @@ public class DeleteProductHandler(CatalogDbContext dbContext)
 {
     public async Task<DeleteProductResult> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
     {
-        var product = await dbContext.Products.FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken: cancellationToken)
-            ?? throw new ProductNotFoundException(request.Id);
+        var product = await dbContext.Products
+                .Find(p => p.Id == request.Id)
+                .FirstOrDefaultAsync(cancellationToken) 
+                      ?? throw new ProductNotFoundException(request.Id);
         
-        dbContext.Products.Remove(product);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await dbContext.Products.DeleteOneAsync(p => p.Id == request.Id, cancellationToken: cancellationToken);
 
         return new DeleteProductResult(true);
     }

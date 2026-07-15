@@ -1,6 +1,6 @@
 ﻿using BuildingBlocks.Pagination;
 using Catalog.API.Data;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 
 namespace Catalog.API.Brands.GetBrands;
 
@@ -13,11 +13,12 @@ public class GetBrandsHandler(CatalogDbContext dbContext): IQueryHandler<GetBran
     public async Task<GetBrandsResult> Handle(GetBrandsQuery query, CancellationToken cancellationToken)
     {
         var request = query.Request;
-        var totalCount = await dbContext.ProductBrands.CountAsync(cancellationToken: cancellationToken);
+        var totalCount = await dbContext.ProductBrands.CountDocumentsAsync(FilterDefinition<ProductBrand>.Empty, cancellationToken: cancellationToken);
 
         var brands = await dbContext.ProductBrands
+            .Find(_ => true)
             .Skip((request.PageIndex - 1) * request.PageSize)
-            .Take(request.PageSize)
+            .Limit(request.PageSize)
             .ToListAsync(cancellationToken);
 
         return new GetBrandsResult(new PaginatedResult<ProductBrand>

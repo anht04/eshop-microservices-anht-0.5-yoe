@@ -1,5 +1,5 @@
 ﻿using Catalog.API.Data;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 
 namespace Catalog.API.Products.GetProductByCategory;
 
@@ -14,7 +14,7 @@ public class GetProductsByCategoryHandler(CatalogDbContext dbContext)
     public async Task<GetProductsByCategoryResult> Handle(GetProductsByCategoryQuery request, CancellationToken cancellationToken)
     {
         var products = await dbContext.Products
-            .Where(p => p.Category.Contains(request.Category))
+            .Find(p => p.Category.Contains(request.Category))
             .ToListAsync(cancellationToken);
 
         return new GetProductsByCategoryResult(products);

@@ -1,6 +1,6 @@
 ﻿using BuildingBlocks.Pagination;
 using Catalog.API.Data;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 
 namespace Catalog.API.Types.GetTypes;
 
@@ -13,11 +13,12 @@ public class GetTypesHandler(CatalogDbContext dbContext): IQueryHandler<GetTypes
     public async Task<GetTypesResult> Handle(GetTypesQuery query, CancellationToken cancellationToken)
     {
         var request = query.Request;
-        var totalCount = await dbContext.ProductTypes.CountAsync(cancellationToken: cancellationToken);
+        var totalCount = await dbContext.ProductTypes.CountDocumentsAsync(FilterDefinition<ProductType>.Empty, cancellationToken: cancellationToken);
 
-        var Types = await dbContext.ProductTypes
+        var types = await dbContext.ProductTypes
+            .Find(_ => true)
             .Skip((request.PageIndex - 1) * request.PageSize)
-            .Take(request.PageSize)
+            .Limit(request.PageSize)
             .ToListAsync(cancellationToken);
 
         return new GetTypesResult(new PaginatedResult<ProductType>
@@ -25,7 +26,7 @@ public class GetTypesHandler(CatalogDbContext dbContext): IQueryHandler<GetTypes
             PageIndex = request.PageIndex,
             PageSize = request.PageSize,
             TotalCount = totalCount,
-            Data = Types
+            Data = types
         });
     }
 }

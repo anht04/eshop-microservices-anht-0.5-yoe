@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using BuildingBlocks.DDD;
+using MongoDB.Driver;
 
 namespace Catalog.API.Data;
 
@@ -8,32 +9,33 @@ public static class CatalogDbContextSeed
     {
         using var scope = app.Services.CreateScope();
 
-        var context = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
 
-        await SeedAsync(context);
+        await SeedAsync(dbContext);
     }
 
-    public static async Task SeedAsync(CatalogDbContext dbContext, CancellationToken cancellationToken = default)
+    private static async Task SeedAsync(CatalogDbContext dbContext, CancellationToken cancellationToken = default)
     {
-        if (!await dbContext.ProductBrands.AnyAsync(cancellationToken))
+        var brandCount = await dbContext.ProductBrands.CountDocumentsAsync(_ => true, cancellationToken: cancellationToken);
+        if (brandCount == 0)
         {
-            await dbContext.ProductBrands.AddRangeAsync(GetPreconfiguredBrands(), cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.ProductBrands.InsertManyAsync(GetPreconfiguredBrands(), cancellationToken: cancellationToken);
         }
 
-        if (!await dbContext.ProductTypes.AnyAsync(cancellationToken))
+        var typeCount = await dbContext.ProductTypes.CountDocumentsAsync(_ => true, cancellationToken: cancellationToken);
+        if (typeCount == 0)
         {
-            await dbContext.ProductTypes.AddRangeAsync(GetPreconfiguredTypes(), cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.ProductTypes.InsertManyAsync(GetPreconfiguredTypes(), cancellationToken: cancellationToken);
         }
 
-        if (!await dbContext.Products.AnyAsync(cancellationToken))
+        var productCount = await dbContext.Products.CountDocumentsAsync(_ => true, cancellationToken: cancellationToken);
+        if (productCount == 0)
         {
-            var brands = await dbContext.ProductBrands.ToListAsync(cancellationToken);
-            var types = await dbContext.ProductTypes.ToListAsync(cancellationToken);
+            var brands = await dbContext.ProductBrands.Find(_ => true).ToListAsync(cancellationToken);
+            var types = await dbContext.ProductTypes.Find(_ => true).ToListAsync(cancellationToken);
 
-            await dbContext.Products.AddRangeAsync(GetPreconfiguredProducts(brands, types), cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            var products = GetPreconfiguredProducts(brands, types);
+            await dbContext.Products.InsertManyAsync(products, cancellationToken: cancellationToken);
         }
     }
 
@@ -41,13 +43,13 @@ public static class CatalogDbContextSeed
     {
         return
         [
-            new ProductBrand { Id = Guid.Parse("11111111-1111-1111-1111-111111111111"), Name = "Apple" },
-            new ProductBrand { Id = Guid.Parse("22222222-2222-2222-2222-222222222222"), Name = "Samsung" },
-            new ProductBrand { Id = Guid.Parse("33333333-3333-3333-3333-333333333333"), Name = "Huawei" },
-            new ProductBrand { Id = Guid.Parse("44444444-4444-4444-4444-444444444444"), Name = "Xiaomi" },
-            new ProductBrand { Id = Guid.Parse("55555555-5555-5555-5555-555555555555"), Name = "HTC" },
-            new ProductBrand { Id = Guid.Parse("66666666-6666-6666-6666-666666666666"), Name = "LG" },
-            new ProductBrand { Id = Guid.Parse("77777777-7777-7777-7777-777777777777"), Name = "Panasonic" }
+            new ProductBrand { Id = "111111111111111111111111", Name = "Apple" },
+            new ProductBrand { Id = "222222222222222222222222", Name = "Samsung" },
+            new ProductBrand { Id = "333333333333333333333333", Name = "Huawei" },
+            new ProductBrand { Id = "444444444444444444444444", Name = "Xiaomi" },
+            new ProductBrand { Id = "555555555555555555555555", Name = "HTC" },
+            new ProductBrand { Id = "666666666666666666666666", Name = "LG" },
+            new ProductBrand { Id = "777777777777777777777777", Name = "Panasonic" }
         ];
     }
 
@@ -55,20 +57,20 @@ public static class CatalogDbContextSeed
     {
         return
         [
-            new ProductType { Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), Name = "Smart Phone" },
-            new ProductType { Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"), Name = "White Appliances" },
-            new ProductType { Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"), Name = "Home Kitchen" },
-            new ProductType { Id = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"), Name = "Camera" }
+            new ProductType { Id = "aaaaaaaaaaaaaaaaaaaaaaaa", Name = "Smart Phone" },
+            new ProductType { Id = "bbbbbbbbbbbbbbbbbbbbbbbb", Name = "White Appliances" },
+            new ProductType { Id = "cccccccccccccccccccccccc", Name = "Home Kitchen" },
+            new ProductType { Id = "dddddddddddddddddddddddd", Name = "Camera" }
         ];
     }
 
     private static IEnumerable<Product> GetPreconfiguredProducts(List<ProductBrand> brands, List<ProductType> types)
     {
-        return
-        [
+        var products = new List<Product>
+        {
             new Product
             {
-                Id = Guid.Parse("5334c996-8457-4cf0-815c-ed2b77c4ff61"),
+                Id = "5334c99684574cf0815ced2b",
                 Name = "IPhone X",
                 Description = "This phone is the company's biggest change to its flagship smartphone in years. It includes a borderless.",
                 ImageFile = "product-1.png",
@@ -79,7 +81,7 @@ public static class CatalogDbContextSeed
             },
             new Product
             {
-                Id = Guid.Parse("c67d6323-e8b1-4bdf-9a75-b0d0d2e7e914"),
+                Id = "c67d6323e8b14bdf9a75b0d0",
                 Name = "Samsung 10",
                 Description = "This phone is the company's biggest change to its flagship smartphone in years. It includes a borderless.",
                 ImageFile = "product-2.png",
@@ -90,7 +92,7 @@ public static class CatalogDbContextSeed
             },
             new Product
             {
-                Id = Guid.Parse("4f136e9f-ff8c-4c1f-9a33-d12f689bdab8"),
+                Id = "4f136e9fff8c4c1f9a33d12f",
                 Name = "Huawei Plus",
                 Description = "This phone is the company's biggest change to its flagship smartphone in years. It includes a borderless.",
                 ImageFile = "product-3.png",
@@ -101,7 +103,7 @@ public static class CatalogDbContextSeed
             },
             new Product
             {
-                Id = Guid.Parse("6ec1297b-ec0a-4aa1-be25-6726e3b51a27"),
+                Id = "6ec1297bec0a4aa1be256726",
                 Name = "Xiaomi Mi 9",
                 Description = "This phone is the company's biggest change to its flagship smartphone in years. It includes a borderless.",
                 ImageFile = "product-4.png",
@@ -112,7 +114,7 @@ public static class CatalogDbContextSeed
             },
             new Product
             {
-                Id = Guid.Parse("b786103d-c621-4f5a-b498-23452610f88c"),
+                Id = "b786103dc6214f5ab4982345",
                 Name = "HTC U11+ Plus",
                 Description = "This phone is the company's biggest change to its flagship smartphone in years. It includes a borderless.",
                 ImageFile = "product-5.png",
@@ -123,7 +125,7 @@ public static class CatalogDbContextSeed
             },
             new Product
             {
-                Id = Guid.Parse("c4bbc4a2-4555-45d8-97cc-2a99b2167bff"),
+                Id = "c4bbc4a2455545d897cc2a99",
                 Name = "LG G7 ThinQ",
                 Description = "This phone is the company's biggest change to its flagship smartphone in years. It includes a borderless.",
                 ImageFile = "product-6.png",
@@ -134,7 +136,7 @@ public static class CatalogDbContextSeed
             },
             new Product
             {
-                Id = Guid.Parse("93170c85-7795-489c-8e8f-7dcf3b4f4188"),
+                Id = "93170c857795489c8e8f7dcf",
                 Name = "Panasonic Lumix",
                 Description = "This phone is the company's biggest change to its flagship smartphone in years. It includes a borderless.",
                 ImageFile = "product-6.png",
@@ -143,10 +145,20 @@ public static class CatalogDbContextSeed
                 Brand = GetBrand("Panasonic"),
                 Type = GetType("Camera")
             }
-        ];
+        };
+
+        foreach (var product in products)
+        {
+            // Đã đổi từ AuditableEntity<Guid> sang AuditableEntity<string>
+            if (product is AuditableEntity<string> auditable && auditable.CreatedAt == default)
+            {
+                auditable.CreatedAt = DateTime.UtcNow;
+            }
+        }
+
+        return products;
 
         ProductType GetType(string name) => types.Single(t => t.Name == name);
-
         ProductBrand GetBrand(string name) => brands.Single(b => b.Name == name);
     }
 }

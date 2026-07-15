@@ -1,8 +1,10 @@
-﻿namespace Catalog.API.Products.GetProducts;
+﻿using BuildingBlocks.Pagination;
 
-public record GetProductsRequest(int PageNumber = 1, int PageSize = 10);
+namespace Catalog.API.Products.GetProducts;
 
-public record GetProductsResponse(IEnumerable<Product> Products);
+public record GetProductsRequest(Guid? BrandId, Guid? TypeId, string? Sort, string? Search, int PageIndex = 1, int PageSize = 10);
+
+public record GetProductsResponse(PaginatedResult<Product> Products);
 
 public class GetProductsEndpoint : ICarterModule
 {
@@ -10,7 +12,10 @@ public class GetProductsEndpoint : ICarterModule
     {
         app.MapGet("/products", async ([AsParameters] GetProductsRequest request, ISender sender) =>
             {
-                var query = request.Adapt<GetProductsQuery>();
+                var query = request.Adapt<GetProductsQuery>() with
+                {
+                    Pagination = new PaginationRequest(request.PageIndex, request.PageSize)
+                };
 
                 var result = await sender.Send(query);
 

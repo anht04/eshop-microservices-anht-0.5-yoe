@@ -1,29 +1,23 @@
 using Catalog.API.Settings;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using MongoDB.EntityFrameworkCore.Extensions;
+using MongoDB.Driver;
 
 namespace Catalog.API.Data;
 
-public class CatalogDbContext : DbContext
+public class CatalogDbContext
 {
-    private readonly IOptions<DatabaseSettings> _dbOptions;
-    public DbSet<Product> Products { get; init; } = default!;
-    public DbSet<ProductBrand> ProductBrands { get; init; } = default!;
-    public DbSet<ProductType> ProductTypes { get; init; } = default!;
+    public IMongoCollection<Product> Products { get; }
+    public IMongoCollection<ProductBrand> ProductBrands { get; }
+    public IMongoCollection<ProductType> ProductTypes { get; }
 
-    public CatalogDbContext(DbContextOptions<CatalogDbContext> options, IOptions<DatabaseSettings> dbOptions) : base(options)
+    public CatalogDbContext(IOptions<DatabaseSettings> options)
     {
-        _dbOptions = dbOptions;
-        Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
-    }
+        var settings = options.Value;
+        var client = new MongoClient(settings.ConnectionString);
+        var database = client.GetDatabase(settings.DatabaseName);
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        base.OnModelCreating(modelBuilder);
-        var optionValue = _dbOptions.Value; 
-        modelBuilder.Entity<Product>().ToCollection(optionValue.ProductCollectionName);
-        modelBuilder.Entity<ProductBrand>().ToCollection(optionValue.BrandCollectionName);
-        modelBuilder.Entity<ProductType>().ToCollection(optionValue.TypeCollectionName);
+        Products = database.GetCollection<Product>(settings.ProductCollectionName);
+        ProductBrands = database.GetCollection<ProductBrand>(settings.BrandCollectionName);
+        ProductTypes = database.GetCollection<ProductType>(settings.TypeCollectionName);
     }
 }

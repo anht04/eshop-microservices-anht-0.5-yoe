@@ -4,7 +4,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Catalog.API.Models;
 
-public class Product : AuditableEntity<Guid>
+public class Product : AuditableEntity<string>
 {
     public string Name { get; set; } = default!;
     

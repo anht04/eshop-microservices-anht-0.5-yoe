@@ -3,8 +3,6 @@ using Catalog.API.Data;
 using Catalog.API.Settings;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -19,15 +17,7 @@ services.AddMediatR(config =>
 });
 
 services.Configure<DatabaseSettings>(builder.Configuration.GetSection(nameof(DatabaseSettings)));
-builder.Services.AddDbContext<CatalogDbContext>((sp, options) =>
-    {
-        var settings = sp.GetRequiredService<IOptions<DatabaseSettings>>().Value;
-        options.UseMongoDB(
-            settings.ConnectionString,
-            settings.DatabaseName
-        );
-    }
-);
+builder.Services.AddSingleton<CatalogDbContext>();
 
 services.AddExceptionHandler<CustomExceptionHandler>();
 
